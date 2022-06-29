@@ -1,0 +1,342 @@
+#include <Keypad.h>
+#include <LiquidCrystal.h>
+#define NO_BOTON '_'
+#define BOTON_M1 1
+#define BOTON_M2 2
+LiquidCrystal pantalla(2,3,4,5,6,7);
+
+const byte ROWS = 4;
+const byte COLS = 4;
+char key; 
+char numero[7];
+int indice=0;
+int result;
+int operacion;
+int num1;
+int num2;
+int flag=0;
+int flagPantalla = 0;
+char num [7]={0,0,0,0,0,0,0};
+int negativoAhora = 1;
+int negativoAntes = 0;
+char botonAntes = NO_BOTON;
+char botonAhora = NO_BOTON;
+int valorM1=0;
+int flagM1=0;
+int flagM2=0;
+
+char keys[ROWS][COLS] = {
+  {'1','2','3','+'},
+  {'4','5','6','-'},
+  {'7','8','9','*'},
+  {'N','0','=','/'}
+};
+
+byte rowPins[ROWS] = { 8,  7,  6, 5 }; 
+byte colPins[COLS] = { 12, 11, 10, 9 }; 
+ 
+
+Keypad kpd = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
+
+// FUNCIONES
+
+
+char leerTeclado(){
+  char caracter = '_';
+  for(int fila=0; fila<4; fila++){
+    digitalWrite(9-fila, LOW);
+    for(int columna=0; columna<4; columna++){
+      int valorLeido = digitalRead(5-columna);
+      if(valorLeido == LOW){
+        caracter = keys[fila][columna];
+      }
+    }
+    digitalWrite(9-fila, HIGH);
+  }
+  return caracter;
+}
+
+int leerBoton()
+{  
+  int valorPinA0 = analogRead(A0);
+  int valorPinA1 = analogRead(A1);
+  Serial.println("PIN A0:");
+  Serial.println(valorPinA0);
+  Serial.println("PIN A1:");
+  Serial.println(valorPinA1);
+  if (valorPinA0>900 && valorPinA0<1200)
+  {
+    Serial.println("Entra IF de M1");
+    return BOTON_M1;
+  }
+  else
+  {
+    if (valorPinA1>900 && valorPinA1<1200)
+    {
+      Serial.println("ENTRA IF M2");
+      return BOTON_M2;
+    }
+    else
+    {
+      return NO_BOTON;
+    }
+  }// if (valorPinA0>670 && valorPinA0<700)
+//    return BOTON_TEST;
+ return NO_BOTON; 
+}
+
+
+void initNumero()
+{
+  numero[0]=' ';
+  numero[1]=0;
+  numero[2]=0;
+  numero[3]=0;
+  numero[4]=0;
+  numero[5]=0;
+  numero[6]=0;
+}
+
+void nroNegativo()
+{
+  if(negativoAhora == 1)
+  {
+    numero[6] = numero[5];
+    numero[5] = numero[4];
+    numero[4] = numero[3];
+    numero[3] = numero[2];
+    numero[2] = numero[1];
+    numero[1] = numero[0];
+    numero[0] = '-';
+    indice++;
+    
+   }
+   else
+   {
+    
+    numero[0] = numero[1];
+    numero[1] = numero[2];
+    numero[2] = numero[3];
+    numero[3] = numero[4];
+    numero[4] = numero[5];
+    numero[5] = numero[6];
+     indice--;
+   }
+  
+  
+}
+void imprimirPantalla()
+{	
+   Serial.println("Entra imprimir pantalla");
+   pantalla.clear();
+ 	if(flagPantalla == 1)
+    {
+      Serial.println("Entra if de print");
+      pantalla.setCursor(0,0);
+        pantalla.print(num);
+      pantalla.print(numero); 
+      
+    }
+  	else
+    {
+      Serial.println("Entra else de print");
+      pantalla.setCursor(0,0);
+      pantalla.print(numero);
+    }
+}
+  
+void cargarNro()
+{
+  if(key != 'N')
+  {
+  	numero[indice] = key;
+    Serial.println("CARGAR NRO: NUMERO");
+    Serial.println(numero[indice]);
+  	indice++;
+  }
+}
+
+void guardarNro()
+{	
+   if(flag==1)
+    {
+      num2 = atol(numero);
+    }
+    else
+    {
+      num1 = atol(numero);
+      strcpy(num,numero);
+    }
+
+    flag = 0;
+  
+}
+
+
+
+void resultado(int oper)
+{ 
+  switch(oper){
+	case 1:
+  	pantalla.setCursor(0,1);
+	pantalla.print(num1+num2);
+    break;
+                   
+    case 2:
+  	pantalla.setCursor(0,1);
+	pantalla.print(num1-num2);
+    break;
+                  
+    case 3:
+ 	 pantalla.setCursor(0,1);
+	pantalla.print(num1*num2);
+    break;
+                   
+    case 4:
+  	pantalla.setCursor(0,1);
+	pantalla.print(num1/num2);
+    break;
+    }
+}
+
+void limpiador(){
+ indice=0;
+ result =0;
+ operacion = 0;
+ num1=0;
+ num2=0;
+ flag=0;
+  
+}
+
+void limpiaPantalla()
+{
+  if(key == '+')
+  {
+    pantalla.clear();
+  }
+}
+
+void setup()
+{
+  
+  pantalla.begin(16,2);
+
+  Serial.begin(9600);
+}
+
+void loop()
+{ 
+  Serial.println("entra loop");
+  botonAhora = leerBoton();
+  Serial.println("Boton Ahora:");
+  Serial.println(botonAhora);
+  key  = kpd.getKey();
+  Serial.println("Valor KEY:");
+  Serial.println(key);
+  
+  if(key != 0)
+  {    
+      //botonAhora = key;
+      Serial.println("Boton Ahora:");
+  	  Serial.println(botonAhora);
+  }
+  if(botonAhora!=NO_BOTON && botonAhora!='_' && botonAhora!=botonAntes)
+  {
+    switch(botonAhora)
+    {
+/*      case BOTON_M1:
+      	flag=0;
+ 		valorM1=numero[indice];  
+     	lcd.print("Se g");
+        lcd.setCursor(0, 0);
+        break;*/
+     case BOTON_M1:
+        if(flag==0)
+        {
+          valorM1=numero[indice];
+          pantalla.clear();
+          pantalla.print("SE GUARDO M1");
+          flag=1;
+          flagM1=1;
+        }
+        break;
+     case BOTON_M2:
+        if(flagM1==1)
+        {
+          Serial.println("ENTRA CASE M2");
+          valorM1=numero[indice];
+          pantalla.clear();
+          Serial.println("VALOR M1 ALMACENADO:");
+          Serial.println(valorM1);
+          pantalla.print(valorM1);
+          flag=1;
+        }
+        break;
+      default:
+      	Serial.println("DEFAAAAAULT");
+		//key  = kpd.getKey();
+        Serial.println("key tomadda:");
+        Serial.println(key);
+      
+  
+ 		if(key)
+   		{	 
+          Serial.println("entra if de key");
+      	  cargarNro();
+          Serial.println("cargo nro ?");
+          imprimirPantalla();
+      	  if(key == 'N')
+          {
+            nroNegativo();
+       	    negativoAhora = !negativoAhora;
+        
+            imprimirPantalla();
+         }
+         if(key == '+' || key == '-' ||key == '*' ||
+            key == '/'|| key== '=')
+         {
+            guardarNro();
+            initNumero();
+            indice=0;
+            flag=1;
+            flagPantalla = 1;
+            negativoAhora = 1;
+        
+            switch(key)
+            {
+               case '+':
+                   operacion=1;
+                   break;
+               case '-':
+                   operacion=2;
+                   break;
+          
+               case '*':
+                   operacion=3;
+                   break;
+          
+               case '/':
+                   operacion=4;
+                   break;
+             }
+        
+       	  if(key== '=')
+          {
+           resultado(operacion);
+           limpiador();
+           limpiaPantalla();	
+          }
+        
+        break;
+        Serial.println(num1);
+        Serial.println(num2);
+        
+      }
+     
+  }
+  botonAntes = botonAhora;   
+  
+}
+}
+}
